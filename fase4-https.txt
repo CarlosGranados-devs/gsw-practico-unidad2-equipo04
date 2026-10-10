@@ -1,0 +1,117 @@
+==================================================
+ Laboratorio 2 - GSW - Unidad 2
+ FASE 4 - HTTPS local con mkcert
+ Responsable: Administrador de Certificados (SSL) - Jose Aguilar
+==================================================
+
+1) COMANDOS EJECUTADOS (mkcert + SSL)
+-------------------------------------
+a) Instalacion de mkcert:
+
+  sudo apt update
+  sudo apt install -y libnss3-tools wget
+  wget -O mkcert https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
+  chmod +x mkcert
+  sudo mv mkcert /usr/local/bin/mkcert
+  mkcert -version
+
+b) Generacion de la CA local y del certificado:
+
+  mkcert -install
+     (NOTA: el comando lleva GUION: mkcert -install. Sin guion crea un
+      certificado basura para el dominio "install" y no instala la CA.)
+
+  mkcert dulcehogar.local
+  sudo mkdir -p /etc/apache2/ssl/dulcehogar.local
+  sudo mv dulcehogar.local.pem dulcehogar.local-key.pem /etc/apache2/ssl/dulcehogar.local/
+
+  Certificados generados:
+    /etc/apache2/ssl/dulcehogar.local/dulcehogar.local.pem
+    /etc/apache2/ssl/dulcehogar.local/dulcehogar.local-key.pem
+
+c) Abrir el puerto 8900:
+
+  echo "Listen 8900" | sudo tee -a /etc/apache2/ports.conf
+
+d) Virtual Host HTTPS (config/dulcehogar.local-ssl.conf):
+
+  <IfModule mod_ssl.c>
+    <VirtualHost *:8900>
+      ServerName dulcehogar.local
+      DocumentRoot /var/www/dulcehogar.local
+
+      SSLEngine on
+      SSLCertificateFile   /etc/apache2/ssl/dulcehogar.local/dulcehogar.local.pem
+      SSLCertificateKeyFile /etc/apache2/ssl/dulcehogar.local/dulcehogar.local-key.pem
+
+      ProxyPreserveHost On
+      ProxyPass /api http://localhost:9000/api
+      ProxyPassReverse /api http://localhost:9000/api
+    </VirtualHost>
+  </IfModule>
+
+e) Habilitar y verificar:
+
+  sudo a2enmod ssl
+  sudo a2ensite dulcehogar.local-ssl.conf
+  sudo apache2ctl configtest      -> Syntax OK
+  sudo systemctl restart apache2
+  sudo ss -tlnp | grep apache2    -> *:8900 en escucha
+
+  -> Ver captura: capturas/fase4-https-syntax-ok.png
+
+f) Confianza de la CA en Windows (para que el navegador NO de advertencia):
+
+  La CA raiz de mkcert se instalo en "Entidades de certificacion raiz de confianza"
+  de Windows (rootCA.pem). Tambien se agrego en el archivo hosts de Windows:
+      172.20.201.178  dulcehogar.local
+  (en este equipo el puerto 80 lo ocupa IIS, por eso se publico el sitio HTTPS
+   en el puerto 8900, tal como pide la practica).
+
+2) POR QUE CERTBOT NO SIRVE PARA dulcehogar.local
+--------------------------------------------------
+  certbot usa Let's Encrypt, que solo emite certificados para dominios PUBLICOS
+  reales. Para validar la propiedad del dominio, Let's Encrypt necesita que el
+  servidor sea alcanzable desde internet (validacion HTTP-01 o DNS-01).
+  "dulcehogar.local" no es un dominio publico: no existe en el DNS mundial y no
+  es direccionable desde internet, por lo que la validacion fallaria siempre.
+  Por eso, para HTTPS en un entorno local se usa mkcert, que instala una CA
+  raiz local y firma el certificado sin depender de internet.
+
+3) DIFERENCIA: CERTIFICADO AUTOFIRMADO vs CERTIFICADO DE MKCERT
+---------------------------------------------------------------
+  - Autofirmado: el propio servidor firma su certificado. Ningun navegador
+    confia en esa firma, por lo que siempre aparece la advertencia
+    "Su conexion no es privada". Debe aceptarse manualmente cada vez.
+  - mkcert: crea una Autoridad Certificadora raiz LOCAL y la instala en el
+    almacen de confianza del sistema (en WSL y en Windows). Como el navegador
+    ya confia en esa CA, el certificado firmado por ella se valida sin
+    advertencia (se ve el candado verde).
+  - Ninguno de los dos es valido para un dominio publico real: para
+    produccion se necesita una CA publica (Let's Encrypt/comercial).
+
+4) QUE CAMBIARIA EN PRODUCCION (dulcehogar.com.sv)
+--------------------------------------------------
+  - Usar el dominio publico real dulcehogar.com.sv con su DNS configurado
+    apuntando a una IP publica del servidor.
+  - Solicitar un certificado de una CA publica (p. ej. certbot/Let's Encrypt
+    para HTTPS gratuito con renovacion automatica) en lugar de mkcert.
+  - Escuchar en el puerto estandar 443 ( https://dulcehogar.com.sv ) y
+    redirigir el puerto 80 a 443.
+  - Mantener/asegurar el proxy a la API interna (localhost:9000) solo en la
+    red privada, y reforzar seguridad (firewall, actualizaciones, HTTPS para
+    la API si es posible).
+
+5) VALIDACION Y CAPTURAS
+------------------------
+  Comando de verificacion de configuracion:
+
+  sudo apache2ctl configtest
+
+  Resultado:
+
+  Syntax OK
+
+  La pagina se abrio en el navegador en https://dulcehogar.local:8900/
+  (y https://dulcehogar.local:8900/api/saludo?nombre=Equipo cuando la API
+  este disponible) SIN advertencia de seguridad, con el candado de HTTPS.
