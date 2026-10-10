@@ -1,0 +1,69 @@
+FASE 1 - DIMENSIONAMIENTO COLABORATIVO
+Laboratorio 2 - Gestión de Servidores Web
+Caso: Dulce Hogar
+
+DATOS DEL CASO
+
+Sistema operativo: Ubuntu Server LTS (con WSL2 en máquinas Windows).
+Hardware: 2 vCPU, 4 GB de RAM y 40 GB SSD.
+Tráfico normal: 500 visitas diarias.
+Tráfico máximo estimado: 3,000 visitas en días festivos.
+
+1. ¿LOS 2 vCPU Y 4 GB DE RAM SON SUFICIENTES? ¿CUÁL ES EL FACTOR PICO?
+
+Los 2 vCPU y los 4 GB de RAM pueden ser suficientes para atender las 500 visitas diarias, siempre que el sitio esté bien optimizado. Cuando el tráfico llegue a 3,000 visitas en días festivos, podrían presentarse problemas de rendimiento dependiendo de cuántas personas entren al mismo tiempo.
+
+El factor pico es 6, porque 3,000 dividido entre 500 es igual a 6.
+
+Cálculo:
+Factor pico = 3,000 / 500 = 6 veces.
+
+2. ¿ESCALAMIENTO VERTICAL U HORIZONTAL?
+
+Recomendamos el escalamiento vertical para Dulce Hogar, ya que es una pequeña empresa y mejorar el servidor actual puede ser más sencillo y económico al inicio.
+
+Si el crecimiento del negocio hace que un solo servidor ya no sea suficiente, se podría considerar el escalamiento horizontal para distribuir las solicitudes entre varios servidores, aunque esto requiere mayor configuración y mantenimiento.
+
+3. ¿QUÉ RECURSO VIGILAR PRIMERO SI EL SERVIDOR ESTÁ LENTO?
+
+Primero revisaríamos el uso de la CPU y la memoria RAM, porque son recursos importantes para procesar las solicitudes y mantener los servicios funcionando.
+
+También comprobaríamos el espacio y la actividad del disco, además del tráfico de red, para identificar cuál de los cuatro recursos está causando la lentitud antes de aumentar la capacidad del servidor.
+
+Recursos que se deben revisar:
+
+CPU:
+Revisar si permanece cerca del 100 % durante un periodo prolongado.
+
+RAM:
+Comprobar la memoria disponible y el uso de memoria de intercambio (swap).
+
+Disco:
+Revisar el espacio libre y la actividad de lectura y escritura.
+
+Red:
+Comprobar si existe saturación o problemas de conexión.
+
+4. DECISIÓN DEL EQUIPO: ¿NUBE O SERVIDOR LOCAL?
+
+Elegimos la nube para Dulce Hogar porque permite comenzar con recursos modestos y ampliarlos cuando aumenten las visitas. Además, facilita el mantenimiento de la infraestructura física y evita una inversión inicial elevada en equipos propios.
+
+Aunque el servidor local ofrece mayor control directo, para una pequeña empresa la nube puede ser una alternativa más flexible.
+
+Comparación entre nube y servidor local:
+
+Costo inicial:
+Nube: Generalmente bajo, ya que no requiere comprar un servidor físico propio.
+Servidor local: Puede ser alto por la compra del equipo y sus componentes.
+
+Escalabilidad:
+Nube: Es más sencillo aumentar los recursos cuando crece el tráfico.
+Servidor local: Depende del hardware disponible y de las ampliaciones posibles.
+
+Mantenimiento:
+Nube: El proveedor mantiene parte de la infraestructura física.
+Servidor local: La empresa se encarga del equipo y su mantenimiento.
+
+Control:
+Nube: Depende de los servicios y permisos del proveedor.
+Servidor local: Ofrece mayor control directo sobre el equipo y su configuración.
