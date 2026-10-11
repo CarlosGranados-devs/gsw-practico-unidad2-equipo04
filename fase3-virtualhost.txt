@@ -1,0 +1,34 @@
+================================================
+FASE 3 VIRTUAL HOST Y REVERSE PROXY
+Integrante responsable: Luis Roman (Adm. de Redes / Proxy)
+==================================================
+
+1. ¿Qué hacen exactamente ProxyPass y ProxyPassReverse? Explicación.
+--------------------------------------------------
+ProxyPass redirige el tráfico entrante que llega a la ruta '/api' del servidor Apache
+(puerto 80) hacia la aplicación backend que escucha en el puerto interno 9000.
+ProxyPassReverse reescribe los encabezados HTTP (como 'Location' o 'URI') en la
+respuesta que devuelve el servidor backend de la API, garantizando que el
+cliente/navegador nunca vea la IP interna ni el puerto 9000, manteniendo la
+transparencia y seguridad del Reverse Proxy.
+
+2. Si apache2ctl configtest falla, ¿cuáles son los 2 errores de sintaxis más comunes y
+cómo los depurarían?
+--------------------------------------------------
+Los dos errores más comunes son:
+a) Olvidar cerrar correctamente una etiqueta de bloque (por ejemplo, omitir
+'</VirtualHost>').
+b) Errores tipográficos en las directivas (como escribir 'Servername' o 'ProxyPasss') o
+falta de espacio entre los parámetros de origen y destino.
+
+Para depurarlos, se ejecuta 'sudo apache2ctl configtest' para que la terminal indique
+la línea exacta del error, o se revisan los últimos registros del sistema con 'journalctl
+-xeu apache2'.
+
+3. Demostración técnica de la conexión con la API:
+--------------------------------------------------
+Se habilitaron los módulos 'proxy' y 'proxy_http'. Al ejecutar la prueba con cURL hacia
+la URL 'http://dulcehogar.local/api/saludo?nombre=Equipo', el VirtualHost procesa la
+petición en el puerto 80 y la redirige exitosamente al puerto 9000 de la API.
+→ Ver evidencia visual en: capturas/fase3-curl-exitoso.png
+==================================================
