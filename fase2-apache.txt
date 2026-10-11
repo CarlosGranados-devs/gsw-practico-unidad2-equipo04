@@ -1,0 +1,179 @@
+LABORATORIO 2 - FASE 2: Instalación de Apache
+Caso: "Dulce Hogar" - dulcehogar.local
+
+Responsable de la fase: Administrador de servidor base (Apoyo: Coordinador)
+Ejecutado por: Dereck Ventura
+
+Entorno utilizado:
+- Windows con WSL2 y Ubuntu (repositorios "resolute")
+- Apache 2.4.66-2ubuntu2.5
+- systemd activo en WSL2 (se usó systemctl sin problemas)
+
+1. COMANDOS EJECUTADOS Y SALIDAS (entorno propio del equipo)
+
+$ sudo apt update
+Hit:1 http://archive.ubuntu.com/ubuntu resolute InRelease
+Get:2 http://security.ubuntu.com/ubuntu resolute-security InRelease [137 kB]
+Get:3 http://archive.ubuntu.com/ubuntu resolute-updates InRelease [137 kB]
+Get:5 http://archive.ubuntu.com/ubuntu resolute-backports InRelease [137 kB]
+[... listas de paquetes de main, universe, restricted y multiverse ...]
+Fetched 32.1 MB in 12s (2732 kB/s)
+103 packages can be upgraded. Run 'apt list --upgradable' to see them.
+
+$ sudo apt install -y apache2
+Installing:
+  apache2
+Installing dependencies:
+  apache2-bin  apache2-data  apache2-utils  libapr1t64  libaprutil1-dbd-sqlite3
+  libaprutil1-ldap  libaprutil1t64  liblua5.4-0  ssl-cert
+Summary:
+  Upgrading: 0, Installing: 10, Removing: 0, Not Upgrading: 103
+  Download size: 2120 kB
+  Space needed: 8218 kB / 1024 GB available
+Fetched 2120 kB in 2s (893 kB/s)
+[... descarga y desempaquetado de los 10 paquetes ...]
+Setting up apache2 (2.4.66-2ubuntu2.5) ...
+Enabling module mpm_event.
+Enabling module authz_core.
+Enabling module authz_host.
+Enabling module alias.
+Enabling module dir.
+Enabling module deflate.
+Enabling module status.
+[... otros módulos y configuraciones básicas ...]
+Enabling site 000-default.
+Created symlink '/etc/systemd/system/multi-user.target.wants/apache2.service' → '/usr/lib/systemd/system/apache2.service'.
+Created symlink '/etc/systemd/system/multi-user.target.wants/apache-htcacheclean.service' → '/usr/lib/systemd/system/apache-htcacheclean.service'.
+
+$ sudo systemctl status apache2
+● apache2.service - The Apache HTTP Server
+     Loaded: loaded (/usr/lib/systemd/system/apache2.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-10-11 17:00:38 CST; 29min ago
+ Invocation: b2aa4f6cef414e4bac91e61005e72b2a
+       Docs: https://httpd.apache.org/docs/2.4/
+   Main PID: 1497 (apache2)
+     Status: "Total requests: 0; Idle/Busy workers 100/0;Requests/sec: 0; Bytes served/sec:   0 B/sec"
+      Tasks: 55 (limit: 2155)
+     Memory: 5.4M (peak: 5.8M)
+        CPU: 930ms
+     CGroup: /system.slice/apache2.service
+             ├─1497 /usr/sbin/apache2 -k start -DFOREGROUND
+             ├─1513 /usr/sbin/apache2 -k start -DFOREGROUND
+             └─1515 /usr/sbin/apache2 -k start -DFOREGROUND
+Oct 11 17:00:37 LAPTOP-GGOC9T3P systemd[1]: Starting apache2.service - The Apache HTTP Server...
+Oct 11 17:00:38 LAPTOP-GGOC9T3P systemd[1]: Started apache2.service - The Apache HTTP Server.
+
+$ sudo systemctl enable apache2
+Synchronizing state of apache2.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable apache2
+
+$ curl http://localhost
+(Salida recortada: se muestran las líneas más relevantes del HTML devuelto)
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" ...>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Apache2 Ubuntu Default Page: It works</title>
+    [... estilos CSS ...]
+  </head>
+  <body>
+    [...]
+          Apache2 Default Page
+          It works!
+    [...]
+    This is the default welcome page used to test the correct operation of
+    the Apache2 server after installation on Ubuntu systems. [...] You should
+    replace this file (located at /var/www/html/index.html) before continuing
+    to operate your HTTP server.
+    [... sección "Configuration Overview", "Document Roots" y "Reporting Problems" ...]
+  </body>
+</html>
+
+$ ls /etc/apache2/sites-available/
+000-default.conf  default-ssl.conf
+
+$ ls /var/www/html/
+index.html
+
+$ sudo apache2ctl configtest
+Syntax OK
+
+
+2. PREGUNTAS PARA DISCUTIR
+
+
+Pregunta 1. ¿Qué muestra la página por defecto de Apache?
+Respuesta:
+Muestra la página "Apache2 Ubuntu Default Page: It works!". Confirma que
+Apache se instaló correctamente y está atendiendo peticiones HTTP en el
+puerto 80. La página explica la estructura de configuración de Apache en
+Ubuntu (apache2.conf, ports.conf y los directorios mods-enabled, conf-enabled
+y sites-enabled) y que el DocumentRoot por defecto es /var/www/html, donde
+está el archivo index.html que debe reemplazarse antes de poner el sitio en
+producción.
+Evidencia: capturas/fase2-apache-activo.png (tomada en nuestro entorno).
+
+Pregunta 2. ¿Qué diferencia hay entre sites-available y sites-enabled?
+Respuesta:
+- /etc/apache2/sites-available/ guarda todos los archivos de configuración
+  de Virtual Hosts disponibles, estén activos o no. En nuestro servidor
+  contiene 000-default.conf y default-ssl.conf.
+- /etc/apache2/sites-enabled/ contiene únicamente enlaces simbólicos a los
+  sitios que están activos. Apache solo lee esta carpeta al arrancar.
+- El comando a2ensite crea el enlace simbólico (activa el sitio) y a2dissite
+  lo elimina (desactiva el sitio) sin borrar el archivo original. Así se
+  puede activar o desactivar un sitio sin perder su configuración.
+
+Pregunta 3. Ejecuten sudo apache2ctl configtest. ¿Qué reporta? ¿Por qué es
+importante antes de reiniciar?
+Resultado obtenido: Syntax OK
+Respuesta:
+Reporta "Syntax OK", lo que significa que la sintaxis de todos los archivos
+de configuración es válida. Es importante ejecutarlo antes de reiniciar o
+recargar porque, si hubiera un error y se reiniciara directamente, Apache no
+arrancaría y el sitio quedaría caído. Con configtest el error se detecta
+mientras el servicio anterior sigue funcionando y se puede corregir sin
+interrumpir el servicio.
+
+Pregunta 4 (Reto). Si Apache no arrancara, ¿qué 3 pasos seguirían para
+diagnosticar el problema?
+Respuesta:
+1) Revisar el estado del servicio y su mensaje de error:
+   sudo systemctl status apache2
+   journalctl -xeu apache2
+2) Validar la configuración y revisar los registros:
+   sudo apache2ctl configtest
+   sudo tail -n 50 /var/log/apache2/error.log
+3) Verificar conflictos de puerto y módulos:
+   sudo ss -tlnp | grep :80
+   Si otro servicio (por ejemplo IIS en Windows) usa el puerto 80, se
+   detiene o se cambia el puerto en /etc/apache2/ports.conf. También se
+   confirman los módulos cargados con apache2ctl -M.
+
+
+3. ERRORES ENCONTRADOS Y CÓMO SE RESOLVIERON
+
+
+Error 1: WslRegisterDistribution failed with error: 0x800701bc
+  Mensaje: "WSL 2 requiere una actualización de su componente de kernel."
+  Causa: el kernel de WSL2 en Windows estaba desactualizado.
+  Solución: se actualizó WSL desde PowerShell como administrador con
+            "wsl --update" y luego "wsl --shutdown".
+
+Error 2: WslRegisterDistribution failed with error: 0x80370114
+  Mensaje: "No se pudo iniciar la operación porque no se instaló una
+           característica requerida."
+  Causa: faltaba una característica de Windows necesaria para WSL2 o la
+         virtualización no estaba disponible/activada.
+  Solución: [COMPLETAR con lo que realmente hizo: por ejemplo, activar las
+            características "Subsistema de Windows para Linux" y
+            "Plataforma de máquina virtual" con dism, reiniciar la PC y/o
+            activar la virtualización en la BIOS].
+
+Resultado: Ubuntu se instaló y funciona correctamente en WSL2.
+
+
+4. EVIDENCIA Y ENTREGABLES DE LA FASE
+
+- Captura: capturas/fase2_apache2.png
+- Apache instalado, activo (running) y habilitado en el arranque.
+- Configuración validada con apache2ctl configtest: Syntax OK.
